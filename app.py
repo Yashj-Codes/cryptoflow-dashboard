@@ -28,6 +28,25 @@ st.set_page_config(
 )
 
 
+def streamlit_version_tuple() -> tuple[int, int, int]:
+    """Return the active Streamlit version as a comparable tuple."""
+    parts = st.__version__.split(".")
+    numeric_parts = []
+    for part in parts[:3]:
+        digits = "".join(character for character in part if character.isdigit())
+        numeric_parts.append(int(digits) if digits else 0)
+    while len(numeric_parts) < 3:
+        numeric_parts.append(0)
+    return tuple(numeric_parts)
+
+
+def stretch_width_kwargs() -> dict[str, object]:
+    """Return width kwargs compatible with both older and newer Streamlit versions."""
+    if streamlit_version_tuple() >= (1, 50, 0):
+        return {"width": "stretch"}
+    return {"use_container_width": True}
+
+
 def bootstrap_data() -> None:
     """Create local data assets when a deployment starts from a clean checkout."""
     if not DATA_PATH.exists():
@@ -168,12 +187,12 @@ def render_sidebar() -> str:
     st.sidebar.write(f"Last updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     device_type = st.sidebar.selectbox("Device filter", ["All", "Android", "iOS", "Web"])
 
-    if st.sidebar.button("Refresh Market Data", use_container_width=True):
+    if st.sidebar.button("Refresh Market Data", **stretch_width_kwargs()):
         run_market_ingest()
         cached_market.clear()
         st.sidebar.success("Market data refreshed")
 
-    if st.sidebar.button("Generate Excel Report", use_container_width=True):
+    if st.sidebar.button("Generate Excel Report", **stretch_width_kwargs()):
         create_excel_report()
         st.sidebar.success("Excel report generated")
 
@@ -183,7 +202,7 @@ def render_sidebar() -> str:
             data=OUTPUT_PATH.read_bytes(),
             file_name="CryptoFlow_Report.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            use_container_width=True,
+            **stretch_width_kwargs(),
         )
     return device_type
 
@@ -196,13 +215,13 @@ def render_funnel_tab(funnel: pd.DataFrame, metrics: dict[str, float]) -> None:
     col3.metric("Avg Drop Rate per Step", f"{metrics['avg_drop_rate']:.1f}%", "-0.8%")
     col4.metric("First Trade Conversion", f"{metrics['first_trade_conversion_rate']:.1f}%", "+1.2%")
 
-    st.plotly_chart(funnel_bar_chart(funnel), use_container_width=True)
+    st.plotly_chart(funnel_bar_chart(funnel), **stretch_width_kwargs())
 
     for _, row in funnel.loc[funnel["is_anomaly"]].iterrows():
         st.warning(f"{row['step_name']} has an elevated drop-rate z-score of {row['z_score']:.1f}.")
 
     with st.expander("View Raw Funnel Data Table"):
-        st.dataframe(funnel, use_container_width=True, hide_index=True)
+        st.dataframe(funnel, **stretch_width_kwargs(), hide_index=True)
 
 
 def render_market_tab() -> None:
@@ -218,9 +237,9 @@ def render_market_tab() -> None:
             record = row.iloc[0]
             column.metric(symbol, currency_inr(float(record["current_price"])), f"{float(record['price_change_24h']):.2f}%")
 
-    st.plotly_chart(market_volume_chart(market_df), use_container_width=True)
-    st.plotly_chart(price_change_chart(market_df), use_container_width=True)
-    st.dataframe(read_market_history(), use_container_width=True, hide_index=True)
+    st.plotly_chart(market_volume_chart(market_df), **stretch_width_kwargs())
+    st.plotly_chart(price_change_chart(market_df), **stretch_width_kwargs())
+    st.dataframe(read_market_history(), **stretch_width_kwargs(), hide_index=True)
 
 
 def render_cohort_tab() -> None:
@@ -234,7 +253,7 @@ def render_cohort_tab() -> None:
     col1, col2 = st.columns(2)
     col1.metric("Week-1 Retention", f"{cohort_metrics['avg_week_1_retention']:.0f}%", f"{latest_week_1 - previous_week_1:+.1f}% vs last cohort")
     col2.metric("Month-1 Retention", f"{cohort_metrics['avg_month_1_retention']:.0f}%", f"{latest_month_1 - previous_month_1:+.1f}% vs last cohort")
-    st.plotly_chart(cohort_heatmap(cohort_df), use_container_width=True)
+    st.plotly_chart(cohort_heatmap(cohort_df), **stretch_width_kwargs())
 
 
 def render_pipeline_tab() -> None:
@@ -251,7 +270,7 @@ def render_pipeline_tab() -> None:
         pipeline_rows,
         columns=["Pipeline Name", "Schedule", "Last Run", "Records Processed", "Status"],
     )
-    st.dataframe(pipeline_df, use_container_width=True, hide_index=True)
+    st.dataframe(pipeline_df, **stretch_width_kwargs(), hide_index=True)
 
     if st.button("Run All Pipelines", type="primary"):
         progress = st.progress(0)
