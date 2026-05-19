@@ -3,8 +3,4 @@ __pycache__/
 *.pyc
 .DS_Store
 
-data/funnel_events.csv
-cryptoflow.db
 alerts/alert_log.txt
-outputs/*
-!outputs/.gitkeep
