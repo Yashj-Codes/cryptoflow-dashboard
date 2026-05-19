@@ -78,6 +78,7 @@ cryptoflow-dashboard/
 3. Click **New app**.
 4. Select your GitHub repository and branch.
 5. Set the main file path to `app.py`.
-6. Click **Deploy**.
+6. In advanced settings, select Python `3.11`.
+7. Click **Deploy**.
 
 The app uses only free dependencies and the CoinGecko public API. If the API is unavailable, fallback market data keeps the dashboard running.
